@@ -1,14 +1,10 @@
 package com.alejandrobudy.sessionbuildingexample
 
-import cats.implicits._
-import cats.Parallel
 import cats.effect.implicits._
-import cats.effect.{Async, IO, IOApp, MonadCancelThrow}
-import com.alejandrobudy.sessionbuildingexample.domain.{Session, Subscription}
-import com.alejandrobudy.sessionbuildingexample.repositories.{
-  ProfileRepository,
-  SubscriptionsRepository
-}
+import cats.effect.{IO, IOApp}
+import cats.implicits._
+import com.alejandrobudy.sessionbuildingexample.domain.Session
+import com.alejandrobudy.sessionbuildingexample.repositories.{ProfileRepository, SubscriptionsRepository}
 import com.alejandrobudy.sessionbuildingexample.storage.BackingStore
 
 import java.time.Instant
