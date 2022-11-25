@@ -32,14 +32,12 @@ object repositories {
   import domain._
 
   object ProfileRepository {
-    def fetchProfile[F[_]: MonadCancelThrow]: F[Profile] =
-      MonadCancelThrow[F].pure(Profile("profile-001", "Alejandro"))
-
+    def fetchProfile: IO[Profile] = IO.pure(Profile("profile-001", "Alejandro"))
   }
 
   object SubscriptionsRepository {
-    def fetch[F[_]: MonadCancelThrow]: F[Subscriptions] =
-      MonadCancelThrow[F].pure(
+    def fetch: IO[Subscriptions] =
+      IO.pure(
         Subscriptions(
           List(
             Subscription("sub-001", "Ibai"),
@@ -52,21 +50,21 @@ object repositories {
 
 object storage {
   object BackingStore {
-    def save[F[_]: MonadCancelThrow](session: Session): F[Unit]   = MonadCancelThrow[F].unit
-    def revoke[F[_]: MonadCancelThrow](session: Session): F[Unit] = MonadCancelThrow[F].unit
+    def save(session: Session): IO[Unit]   = IO.unit
+    def revoke(session: Session): IO[Unit] = IO.unit
   }
 }
 
 object Service {
-  def create[F[_]: Async: Parallel]: F[Session] =
+  def create: IO[Session] =
     for {
       session <- gatherInfo
       _       <- BackingStore.save(session)
     } yield session
 
-  def updateSubscriptions[F[_]: Async: Parallel](session: Session): F[Session] = {
+  def updateSubscriptions(session: Session): IO[Session] = {
     val revokePreviousSession =
-      BackingStore.revoke[F](session)
+      BackingStore.revoke(session)
 
     for {
       _ <- revokePreviousSession.start // Don't care the result, we would use retries + logging
@@ -75,14 +73,14 @@ object Service {
     } yield newSession
   }
 
-  private def gatherInfo[F[_]: Async: Parallel] = (
-    Async[F].delay(UUID.randomUUID()),
-    ProfileRepository.fetchProfile[F],
-    SubscriptionsRepository.fetch[F],
-    Async[F].delay(Instant.now())
+  private def gatherInfo: IO[Session] = (
+    IO.delay(UUID.randomUUID()),
+    ProfileRepository.fetchProfile,
+    SubscriptionsRepository.fetch,
+    IO.delay(Instant.now())
   ).parMapN(Session.apply)
 }
 
 object Main extends IOApp.Simple {
-  def run: IO[Unit] = Service.create[IO] >> Service.updateSubscriptions[IO]
+  def run: IO[Unit] = Service.create >> Service.updateSubscriptions
 }
